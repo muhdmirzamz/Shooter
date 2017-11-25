@@ -11,6 +11,8 @@ import GameplayKit
 
 class GameScene: SKScene, SKPhysicsContactDelegate {
 	
+	var p = CGPoint.init(x: 100, y: 50)
+	
 	struct Collision {
 		let None: UInt32 = 0
 		let All: UInt32 = UInt32.max
@@ -99,13 +101,41 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 	}
 	
 	func spawnMonster() {
-		let monster = SKSpriteNode.init(imageNamed: "monster")
-		monster.position = CGPoint.init(x: self.size.width - 100, y: self.randYPositionForMonsterWith(height: monster.size.height))
-		self.addChild(monster)
+		let monsterSprite = SKSpriteNode.init(imageNamed: "monster")
+		monsterSprite.position = CGPoint.init(x: self.size.width - 100, y: self.randYPositionForMonsterWith(height: monsterSprite.size.height))
+		self.addChild(monsterSprite)
 		
-		monster.physicsBody = SKPhysicsBody.init(rectangleOf: monster.size)
-		monster.physicsBody?.categoryBitMask = Collision().Monster
-		monster.physicsBody?.contactTestBitMask = Collision().Projectile
+		monsterSprite.physicsBody = SKPhysicsBody.init(rectangleOf: monsterSprite.size)
+		monsterSprite.physicsBody?.categoryBitMask = Collision().Monster
+		monsterSprite.physicsBody?.contactTestBitMask = Collision().Projectile
+
+		let pointBlock = SKAction.run {
+			self.p = self.randPositionFor(monsterSprite: monsterSprite)
+		}
+		
+		// repeatForever is not dynamic
+		// https://stackoverflow.com/a/34709183
+		let actionMove = SKAction.run {
+			monsterSprite.run(SKAction.move(to: self.p, duration: 2))
+		}
+
+		let sequence = SKAction.sequence([pointBlock, actionMove, SKAction.wait(forDuration: 1)])
+
+		let forever = SKAction.repeatForever(sequence)
+		monsterSprite.run(forever)
+	}
+	
+	func randPositionFor(monsterSprite: SKSpriteNode) -> CGPoint {
+	
+		let randomHeightMax = CGFloat(arc4random_uniform(UInt32(self.size.height - monsterSprite.size.height)))
+		let randomHeight = randomHeightMax + monsterSprite.size.height
+		
+		let randomWidthMax = CGFloat(arc4random_uniform(UInt32((self.size.width / 2) - monsterSprite.size.width)))
+		let randomWidth = randomWidthMax + ((self.size.width / 2) + monsterSprite.size.width)
+		
+		print("In rand func \(randomWidth, randomHeight)")
+		
+		return CGPoint.init(x: randomWidth, y: randomHeight)
 	}
 	
 	func randYPositionForMonsterWith(height: CGFloat) -> CGFloat {
